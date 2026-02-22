@@ -12,4 +12,4 @@ app.include_router(task.router)
 
 @app.get("/")
 def root():
-    return {"message": "Secure Task Manager API is running and V1 rolled out"}
+    return {"message": "Secure Task Manager API is running and V2 rolled out"}
