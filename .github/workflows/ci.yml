@@ -1,18 +1,19 @@
-name: CI/CD Pipeline
+name: CI Pipeline (GitOps)
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
-  # --- JOB 1: BUILD AND PUSH ---
-  build-and-push:
-    runs-on: self-hosted
-    outputs:
-      image_tag: ${{ steps.vars.outputs.tag }}
+  build-and-update-gitops:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Application Code
         uses: actions/checkout@v3
 
       - name: Set Image Tag
@@ -22,20 +23,21 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build and Push Docker image
+      - name: Build and Push Docker Image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ steps.vars.outputs.tag }} .
           docker push ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ steps.vars.outputs.tag }}
 
-  # --- JOB 2: DEPLOY TO K8S ---
-  deploy:
-    runs-on: self-hosted
-    needs: build-and-push # This ensures Job 1 finishes first
-    steps:
-      - name: Deploy to Kubernetes
+      - name: Clone GitOps Repository
         run: |
-          kubectl set image deployment/secure-task-manager \
-          secure-task-manager=${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ needs.build-and-push.outputs.image_tag }}
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/ezio7223//secure-task-manager-gitops.git
 
-      - name: Verify Rollout
-        run: kubectl rollout status deployment secure-task-manager
+      - name: Update Deployment YAML Image Tag
+        run: |
+          cd secure-task-manager-gitops
+          sed -i "s|image:.*|image: ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ steps.vars.outputs.tag }}|" GitOps/K8/deployment.yaml
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Update image to ${{ steps.vars.outputs.tag }}"
+          git push
