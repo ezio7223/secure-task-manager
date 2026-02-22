@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Task Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 800px; }
+        .card { border: none; border-radius: 12px; }
+        .status-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    </style>
+</head>
+<body>
+
+    <div class="container mt-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-primary">🛡️ Secure Task Manager</h1>
+            <p class="text-muted">GitOps Verified V2 Deployment</p>
+        </div>
+
+        <div class="card shadow-sm p-4 mb-4">
+            <h5 class="card-title mb-3">Create New Task</h5>
+            <form action="/ui/add-task" method="POST" class="row g-3">
+                <div class="col-sm-9">
+                    <input type="text" name="title" class="form-control form-control-lg" placeholder="Enter task details..." required>
+                </div>
+                <div class="col-sm-3">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Add Task</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card shadow-sm overflow-hidden">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Task Name</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr class="align-middle">
+                        <td class="ps-4 text-muted small">#{{ task.id }}</td>
+                        <td class="fw-semibold">{{ task.title }}</td>
+                        <td>
+                            <span class="badge status-pending px-3 py-2 rounded-pill">
+                                ⏳ Pending
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a href="/ui/delete-task/{{ task.id }}" class="btn btn-sm btn-outline-danger px-3">
+                                🗑️ Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <p class="mb-0">Your task list is empty.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="text-center mt-5 text-muted small">
+            Built with FastAPI • Deployed via ArgoCD • Managed by GitOps
+        </footer>
+    </div>
+
+</body>
+</html>
