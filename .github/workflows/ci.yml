@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,29 +6,36 @@ on:
       - main
 
 jobs:
+  # --- JOB 1: BUILD AND PUSH ---
   build-and-push:
     runs-on: self-hosted
-
+    outputs:
+      image_tag: ${{ steps.vars.outputs.tag }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set Image Tag
-          run: echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
-
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${IMAGE_TAG} .
+        id: vars
+        run: echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${IMAGE_TAG}
+      - name: Build and Push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ steps.vars.outputs.tag }} .
+          docker push ${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ steps.vars.outputs.tag }}
 
+  # --- JOB 2: DEPLOY TO K8S ---
+  deploy:
+    runs-on: self-hosted
+    needs: build-and-push # This ensures Job 1 finishes first
+    steps:
       - name: Deploy to Kubernetes
-          run: |
-            kubectl set image deployment/secure-task-manager \
-            secure-task-manager=ezio7223/secure-task-manager:${IMAGE_TAG}
+        run: |
+          kubectl set image deployment/secure-task-manager \
+          secure-task-manager=${{ secrets.DOCKER_USERNAME }}/secure-task-manager:${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Verify Rollout
-          run: kubectl rollout status deployment secure-task-manager
+        run: kubectl rollout status deployment secure-task-manager
