@@ -7,6 +7,8 @@ from .database import engine, get_db
 from . import models
 from .routes import user, task
 
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="Secure Task Manager API")
 templates = Jinja2Templates(directory="app/templates")
 
