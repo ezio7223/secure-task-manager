@@ -3,7 +3,10 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 
 import os
-SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # IMPORTANT: Set a real SECRET_KEY in your environment variables for production!
+    SECRET_KEY = "development_secret_key_please_change_in_production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
